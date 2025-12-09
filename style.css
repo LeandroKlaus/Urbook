@@ -1,4 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+/* Variáveis para cores românticas */
+:root {
+    --gold: #d4af37;
+    --rose-gold: #b76e79;
+    --deep-bg: #1a0b0f;
+    --paper-white: #fdfaf5;
+}
 
 * {
     margin: 0;
@@ -7,9 +13,10 @@
 }
 
 body {
-    font-family: "Poppins", sans-serif;
-    min-height: 100dvh;
-    background-image: url('images/fundo.jpg');
+    font-family: "Cormorant Garamond", serif;
+    min-height: 100vh;
+    /* Mantém sua imagem mas adiciona um overlay elegante */
+    background: linear-gradient(rgba(20, 10, 10, 0.6), rgba(40, 20, 20, 0.6)), url('images/fundo.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -21,6 +28,25 @@ body {
     perspective: 2000px;
 }
 
+/* Efeito de Partículas (Corações) */
+.heart {
+    position: absolute;
+    color: var(--gold);
+    opacity: 0;
+    top: 100vh;
+    animation: floatUp linear infinite;
+    font-size: 1.5rem;
+    pointer-events: none; /* Não atrapalha o clique */
+    z-index: 0;
+}
+
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { opacity: 0.6; }
+    80% { opacity: 0.6; }
+    100% { transform: translateY(-110vh) scale(1.2) rotate(20deg); opacity: 0; }
+}
+
 #orientation-prompt {
     display: none;
     position: fixed;
@@ -28,61 +54,63 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
+    background-color: rgba(20, 10, 10, 0.95);
     z-index: 1000;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     padding: 20px;
+    font-family: "Great Vibes", cursive;
+    font-size: 1.5rem;
+    color: var(--gold);
 }
 
 #orientation-prompt img {
     width: 80px;
     margin-bottom: 20px;
+    filter: sepia(100%) hue-rotate(320deg); /* Deixa o gif num tom rosado */
 }
 
-button {
+/* Botões de Navegação Melhorados */
+.nav-btn {
     position: fixed;
     border: none;
     background-color: transparent;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: all 0.4s ease;
     z-index: 50;
+    opacity: 0.8;
 }
 
-button:hover {
-    transform: scale(1.15);
+.nav-btn:hover {
+    transform: scale(1.2);
+    opacity: 1;
+    filter: drop-shadow(0 0 10px var(--gold));
 }
 
-button img {
-    width: clamp(40px, 8vw, 70px);
-    filter: drop-shadow(0 0 5px rgba(255, 223, 115, 0.7));
+.nav-btn img {
+    width: clamp(40px, 8vw, 60px);
+    /* Deixa as setas douradas/brancas */
+    filter: brightness(0) invert(1) drop-shadow(0 0 2px rgba(0,0,0,0.5)); 
 }
 
-#prev-btn {
-    left: 2%;
-}
-
-#next-btn {
-    right: 2%;
-}
-
-#restart-btn {
+#prev-btn { left: 5%; }
+#next-btn { right: 5%; }
+#restart-btn { 
+    right: 5%; 
     display: none;
-    right: 2%;
 }
 
-#restart-btn img {
-     width: clamp(50px, 10vw, 80px);
-}
-
+/* Container do Livro */
 .book {
     position: relative;
-    height: clamp(280px, 85vh, 520px);
-    width: clamp(210px, 65vh, 380px);
+    height: clamp(300px, 85vh, 600px);
+    width: clamp(220px, 65vh, 420px);
     transition: transform 0.8s ease;
     transform-style: preserve-3d;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5); /* Sombra realista do livro */
+    z-index: 10;
 }
 
 .paper {
@@ -94,79 +122,96 @@ button img {
     transform-style: preserve-3d;
     transform-origin: left;
     transition: transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+    border-radius: 5px; /* Bordas suaves */
 }
 
 .paper.flipped {
     transform: rotateY(-180deg);
 }
 
-.front,
-.back {
+.front, .back {
     position: absolute;
     width: 100%;
     height: 100%;
     top: 0;
     left: 0;
-    background-color: #fdfaf5;
-    border-radius: 6px;
+    background-color: var(--paper-white);
+    border-radius: 5px;
     overflow: hidden;
     backface-visibility: hidden;
+    /* Borda sutil para parecer papel */
+    border: 1px solid rgba(0,0,0,0.1); 
 }
 
 .back {
     transform: rotateY(180deg);
 }
 
-.front-content,
-.back-content {
+.front-content, .back-content {
     width: 100%;
     height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
-.front-content img,
-.back-content img {
+.front-content img, .back-content img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    /* Um leve filtro quente nas fotos para unificar o tom */
+    filter: contrast(1.05) saturate(1.1); 
 }
 
-#f1 {
-    position: relative;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.4);
-}
-
-#fullscreen-trigger {
+/* Efeito de Iluminação (Sombra na dobra) */
+.lighting {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 10;
+    background: linear-gradient(to right, rgba(0,0,0,0.2), transparent 20%);
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Botão de Música */
+#music-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 100;
+}
+
+#music-btn {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 1rem;
     cursor: pointer;
+    transition: 0.3s;
 }
 
-#b10 {
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.4);
+#music-btn:hover {
+    background: var(--rose-gold);
+    border-color: var(--rose-gold);
 }
 
+/* Media Queries */
 @media (min-width: 768px) {
-    #prev-btn { left: 10%; }
-    #next-btn { right: 10%; }
-    #restart-btn { right: 10%; }
-}
-
-@media (min-width: 1200px) {
-    #prev-btn { left: 20%; }
-    #next-btn { right: 20%; }
-    #restart-btn { right: 20%; }
+    #prev-btn { left: 15%; }
+    #next-btn { right: 15%; }
+    #restart-btn { right: 15%; }
 }
 
 @media (max-height: 480px) and (orientation: landscape) {
     .book {
-        height: clamp(280px, 75vh, 520px);
-        width: clamp(210px, 55vh, 380px);
+        height: clamp(250px, 80vh, 500px);
+        width: clamp(180px, 60vh, 350px);
     }
 }
