@@ -298,3 +298,39 @@ body {
         width: min(62vh, 430px);
     }
 }
+
+/* ================================
+   HINT DE TELA CHEIA
+   ================================ */
+.fs-hint {
+    display: block;
+    margin-top: 16px;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 0.85rem;
+    color: rgba(212, 175, 55, 0.65);
+    border: 1px solid rgba(212, 175, 55, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+}
+
+/* Garante que em fullscreen o body ocupa 100% sem barras */
+:fullscreen body,
+:-webkit-full-screen body,
+:-moz-full-screen body {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Safe area para notch/câmera em landscape */
+@supports (padding: env(safe-area-inset-left)) {
+    body {
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+
+    #prev-btn    { left: max(2%, env(safe-area-inset-left)); }
+    #next-btn    { right: max(2%, env(safe-area-inset-right)); }
+    #restart-btn { right: max(2%, env(safe-area-inset-right)); }
+    #music-controls { left: max(16px, env(safe-area-inset-left)); }
+}

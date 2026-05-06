@@ -2,13 +2,21 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Nossa História de Amor</title>
-    
+
+    <!-- iOS: modo standalone (tela cheia ao salvar na home) -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Android Chrome -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Cor da barra de status em PWA -->
+    <meta name="theme-color" content="#1a0b0f" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="style.css" />
     <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
 </head>
@@ -19,6 +27,7 @@
     <div id="orientation-prompt">
         <img src="images/rotate.gif" alt="Ícone de rotação">
         <p>Gire o celular para entrar no nosso mundo...</p>
+        <span class="fs-hint">Toque aqui para habilitar tela cheia ao girar</span>
     </div>
 
     <button id="prev-btn" class="nav-btn">
@@ -31,7 +40,8 @@
                 <div class="front">
                     <div id="f1" class="front-content">
                         <img src="images/capa.jpg" alt="Capa do Livro">
-                        <div class="lighting"></div> </div>
+                        <div class="lighting"></div>
+                    </div>
                 </div>
                 <div class="back">
                     <div id="b1" class="back-content">
@@ -42,107 +52,43 @@
             </div>
 
             <div id="p2" class="paper">
-                <div class="front">
-                    <div id="f2" class="front-content">
-                        <img src="images/pg2.jpg" alt="Página 2">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b2" class="back-content">
-                        <img src="images/pg3.jpg" alt="Página 3">
-                    </div>
-                </div>
+                <div class="front"><div id="f2" class="front-content"><img src="images/pg2.jpg" alt="Página 2"></div></div>
+                <div class="back"><div id="b2" class="back-content"><img src="images/pg3.jpg" alt="Página 3"></div></div>
             </div>
 
             <div id="p3" class="paper">
-                <div class="front">
-                    <div id="f3" class="front-content">
-                        <img src="images/pg4.jpg" alt="Página 4">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b3" class="back-content">
-                        <img src="images/pg5.jpg" alt="Página 5">
-                    </div>
-                </div>
+                <div class="front"><div id="f3" class="front-content"><img src="images/pg4.jpg" alt="Página 4"></div></div>
+                <div class="back"><div id="b3" class="back-content"><img src="images/pg5.jpg" alt="Página 5"></div></div>
             </div>
 
             <div id="p4" class="paper">
-                <div class="front">
-                    <div id="f4" class="front-content">
-                        <img src="images/pg6.jpg" alt="Página 6">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b4" class="back-content">
-                        <img src="images/pg7.jpg" alt="Página 7">
-                    </div>
-                </div>
+                <div class="front"><div id="f4" class="front-content"><img src="images/pg6.jpg" alt="Página 6"></div></div>
+                <div class="back"><div id="b4" class="back-content"><img src="images/pg7.jpg" alt="Página 7"></div></div>
             </div>
 
             <div id="p5" class="paper">
-                <div class="front">
-                    <div id="f5" class="front-content">
-                        <img src="images/pg8.jpg" alt="Página 8">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b5" class="back-content">
-                        <img src="images/pg9.jpg" alt="Página 9">
-                    </div>
-                </div>
+                <div class="front"><div id="f5" class="front-content"><img src="images/pg8.jpg" alt="Página 8"></div></div>
+                <div class="back"><div id="b5" class="back-content"><img src="images/pg9.jpg" alt="Página 9"></div></div>
             </div>
 
             <div id="p6" class="paper">
-                <div class="front">
-                    <div id="f6" class="front-content">
-                        <img src="images/pg10.jpg" alt="Página 10">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b6" class="back-content">
-                        <img src="images/pg11.jpg" alt="Página 11">
-                    </div>
-                </div>
+                <div class="front"><div id="f6" class="front-content"><img src="images/pg10.jpg" alt="Página 10"></div></div>
+                <div class="back"><div id="b6" class="back-content"><img src="images/pg11.jpg" alt="Página 11"></div></div>
             </div>
 
             <div id="p7" class="paper">
-                <div class="front">
-                    <div id="f7" class="front-content">
-                        <img src="images/pg12.jpg" alt="Página 12">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b7" class="back-content">
-                        <img src="images/pg13.jpg" alt="Página 13">
-                    </div>
-                </div>
+                <div class="front"><div id="f7" class="front-content"><img src="images/pg12.jpg" alt="Página 12"></div></div>
+                <div class="back"><div id="b7" class="back-content"><img src="images/pg13.jpg" alt="Página 13"></div></div>
             </div>
 
             <div id="p8" class="paper">
-                <div class="front">
-                    <div id="f8" class="front-content">
-                        <img src="images/pg14.jpg" alt="Página 14">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b8" class="back-content">
-                        <img src="images/pg15.jpg" alt="Página 15">
-                    </div>
-                </div>
+                <div class="front"><div id="f8" class="front-content"><img src="images/pg14.jpg" alt="Página 14"></div></div>
+                <div class="back"><div id="b8" class="back-content"><img src="images/pg15.jpg" alt="Página 15"></div></div>
             </div>
 
             <div id="p9" class="paper">
-                <div class="front">
-                    <div id="f9" class="front-content">
-                        <img src="images/pg16.jpg" alt="Página 16">
-                    </div>
-                </div>
-                <div class="back">
-                    <div id="b10" class="back-content">
-                        <img src="images/quartacapa.jpg" alt="Quarta-capa">
-                    </div>
-                </div>
+                <div class="front"><div id="f9" class="front-content"><img src="images/pg16.jpg" alt="Página 16"></div></div>
+                <div class="back"><div id="b10" class="back-content"><img src="images/quartacapa.jpg" alt="Quarta-capa"></div></div>
             </div>
         </div>
     </div>
@@ -154,7 +100,7 @@
     <button id="restart-btn" class="nav-btn">
         <img src="images/arrow-restart.png" alt="Voltar ao início">
     </button>
-    
+
     <div id="music-controls">
         <button id="music-btn">🎵 Nossa Música</button>
     </div>

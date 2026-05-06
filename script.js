@@ -20,6 +20,45 @@ updateButtons();
 createHearts();
 
 // ================================
+// FULLSCREEN — oculta barra do browser
+// ================================
+function requestFullscreenLandscape() {
+    const el = document.documentElement;
+
+    // Tenta API Fullscreen padrão
+    if (el.requestFullscreen) {
+        el.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+    } else if (el.webkitRequestFullscreen) {
+        // Safari / iOS WKWebView
+        el.webkitRequestFullscreen();
+    } else if (el.mozRequestFullScreen) {
+        el.mozRequestFullScreen();
+    } else if (el.msRequestFullscreen) {
+        el.msRequestFullscreen();
+    }
+
+    // Tenta também travar orientação em landscape
+    if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock("landscape").catch(() => {});
+    }
+}
+
+function exitFullscreenIfActive() {
+    const isFs =
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement;
+
+    if (!isFs) return;
+
+    if (document.exitFullscreen)              document.exitFullscreen().catch(() => {});
+    else if (document.webkitExitFullscreen)   document.webkitExitFullscreen();
+    else if (document.mozCancelFullScreen)    document.mozCancelFullScreen();
+    else if (document.msExitFullscreen)       document.msExitFullscreen();
+}
+
+// ================================
 // MÚSICA
 // ================================
 musicBtn.addEventListener("click", () => {
@@ -51,8 +90,6 @@ function resetZIndex() {
 
 // ================================
 // CÁLCULO DO TRANSLATE
-// Desloca o livro metade de sua própria largura para simular abertura.
-// Usa a largura real do elemento para precisão em qualquer tamanho de tela.
 // ================================
 function getBookHalfWidth() {
     return book.offsetWidth / 2;
@@ -88,15 +125,12 @@ function goNextPage() {
     const paper = papers[currentLocation - 1];
     paper.classList.add("flipped");
 
-    setTimeout(() => {
-        paper.style.zIndex = currentLocation;
-    }, 100);
+    setTimeout(() => { paper.style.zIndex = currentLocation; }, 100);
 
     if (currentLocation === numOfPapers) closeBook(false);
 
     currentLocation++;
     updateButtons();
-
     setTimeout(() => { isAnimating = false; }, 800);
 }
 
@@ -118,7 +152,6 @@ function goPrevPage() {
     if (currentLocation === 1) closeBook(true);
 
     updateButtons();
-
     setTimeout(() => { isAnimating = false; }, 800);
 }
 
@@ -143,23 +176,49 @@ function goInitialState() {
 }
 
 // ================================
-// ORIENTAÇÃO (MOBILE)
+// ORIENTAÇÃO + FULLSCREEN
 // ================================
+function isMobileDevice() {
+    return Math.min(window.innerWidth, window.innerHeight) < 600;
+}
+
 function handleOrientationChange() {
     const isLandscape = window.innerWidth > window.innerHeight;
-    const isMobile = Math.min(window.innerWidth, window.innerHeight) < 600;
 
-    if (isMobile && !isLandscape) {
-        orientationPrompt.style.display = "flex";
-        book.style.display = "none";
-        prevBtn.style.display = "none";
-        nextBtn.style.display = "none";
-        restartBtn.style.display = "none";
+    if (isMobileDevice()) {
+        if (isLandscape) {
+            // --- LANDSCAPE MOBILE: entra em fullscreen e mostra o livro ---
+            orientationPrompt.style.display = "none";
+            book.style.display = "block";
+
+            // Solicita fullscreen — oculta a barra do browser
+            requestFullscreenLandscape();
+
+            requestAnimationFrame(() => {
+                if (currentLocation === 1) {
+                    book.style.transform = "translateX(0px)";
+                } else if (currentLocation > numOfPapers) {
+                    closeBook(false);
+                } else {
+                    openBook();
+                }
+                updateButtons();
+            });
+        } else {
+            // --- PORTRAIT MOBILE: sai do fullscreen e pede para girar ---
+            exitFullscreenIfActive();
+
+            orientationPrompt.style.display = "flex";
+            book.style.display = "none";
+            prevBtn.style.display = "none";
+            nextBtn.style.display = "none";
+            restartBtn.style.display = "none";
+        }
     } else {
+        // --- DESKTOP: nunca fullscreen forçado ---
         orientationPrompt.style.display = "none";
         book.style.display = "block";
 
-        // Reposiciona corretamente ao girar
         requestAnimationFrame(() => {
             if (currentLocation === 1) {
                 book.style.transform = "translateX(0px)";
@@ -174,7 +233,18 @@ function handleOrientationChange() {
 }
 
 // ================================
-// CORAÇÕES FLUTUANTES — SEM LAG
+// PROMPT DE FULLSCREEN NO ORIENTATION-PROMPT
+// Quando o usuário toca na tela de "gire o celular",
+// isso serve como gesto do usuário para ativar fullscreen ao girar.
+// (browsers exigem gesto do usuário para fullscreen)
+// ================================
+orientationPrompt.addEventListener("click", () => {
+    // Grava intenção — quando girar, fullscreen será ativado
+    orientationPrompt.dataset.userConsented = "true";
+});
+
+// ================================
+// CORAÇÕES FLUTUANTES
 // ================================
 function createHearts() {
     const container = document.getElementById("hearts-container");
@@ -182,8 +252,7 @@ function createHearts() {
     const MAX_HEARTS = 15;
 
     function spawnHeart() {
-        const existing = container.querySelectorAll(".heart").length;
-        if (existing >= MAX_HEARTS) return;
+        if (container.querySelectorAll(".heart").length >= MAX_HEARTS) return;
 
         const heart = document.createElement("div");
         heart.classList.add("heart");
@@ -193,12 +262,7 @@ function createHearts() {
         const duration = Math.random() * 3 + 5;
         const leftPos  = Math.random() * 96 + 2;
 
-        heart.style.cssText = `
-            left: ${leftPos}vw;
-            font-size: ${size}rem;
-            animation-duration: ${duration}s;
-        `;
-
+        heart.style.cssText = `left:${leftPos}vw;font-size:${size}rem;animation-duration:${duration}s;`;
         container.appendChild(heart);
         heart.addEventListener("animationend", () => heart.remove(), { once: true });
     }
@@ -207,7 +271,7 @@ function createHearts() {
 }
 
 // ================================
-// SWIPE (TOQUE)
+// SWIPE
 // ================================
 let touchStartX = 0;
 let touchStartY = 0;
@@ -220,7 +284,6 @@ document.addEventListener("touchstart", (e) => {
 document.addEventListener("touchend", (e) => {
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
-
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
         if (dx < 0) goNextPage();
         else goPrevPage();
