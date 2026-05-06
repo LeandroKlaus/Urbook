@@ -12,186 +12,224 @@ const orientationPrompt = document.querySelector("#orientation-prompt");
 const numOfPapers = papers.length;
 const maxLocation = numOfPapers + 1;
 let currentLocation = 1;
+let isAnimating = false;
 
 // Inicialização
 resetZIndex();
 updateButtons();
-createHearts(); // Inicia os corações
+createHearts();
 
-// Lógica de Música (Melhorada para evitar bugs de autoplay)
+// ================================
+// MÚSICA
+// ================================
 musicBtn.addEventListener("click", () => {
     if (backgroundMusic.paused) {
-        backgroundMusic.play();
+        backgroundMusic.play().catch(() => {});
         musicBtn.innerText = "🎵 Pausar Música";
         musicBtn.style.background = "var(--rose-gold)";
     } else {
         backgroundMusic.pause();
         musicBtn.innerText = "🎵 Nossa Música";
-        musicBtn.style.background = "rgba(255, 255, 255, 0.1)";
+        musicBtn.style.background = "rgba(255, 255, 255, 0.12)";
     }
 });
 
+// ================================
+// BOTÕES
+// ================================
 function updateButtons() {
-    // Esconde/Mostra botões baseado na página atual
-    if (currentLocation === 1) {
-        prevBtn.style.display = 'none';
-    } else {
-        prevBtn.style.display = 'block';
-    }
-
-    if (currentLocation > numOfPapers) {
-        nextBtn.style.display = 'none';
-        restartBtn.style.display = 'block';
-    } else {
-        nextBtn.style.display = 'block';
-        restartBtn.style.display = 'none';
-    }
+    prevBtn.style.display    = currentLocation === 1 ? "none" : "block";
+    restartBtn.style.display = currentLocation > numOfPapers ? "block" : "none";
+    nextBtn.style.display    = currentLocation > numOfPapers ? "none" : "block";
 }
 
 function resetZIndex() {
-    for (let i = 0; i < numOfPapers; i++) {
-        papers[i].style.zIndex = numOfPapers - i;
+    papers.forEach((p, i) => {
+        p.style.zIndex = numOfPapers - i;
+    });
+}
+
+// ================================
+// CÁLCULO DO TRANSLATE
+// Desloca o livro metade de sua própria largura para simular abertura.
+// Usa a largura real do elemento para precisão em qualquer tamanho de tela.
+// ================================
+function getBookHalfWidth() {
+    return book.offsetWidth / 2;
+}
+
+function openBook() {
+    const half = getBookHalfWidth();
+    book.style.transform = `translateX(${half}px)`;
+}
+
+function closeBook(isAtBeginning) {
+    if (isAtBeginning) {
+        book.style.transform = "translateX(0px)";
+    } else {
+        const half = getBookHalfWidth();
+        book.style.transform = `translateX(${half}px)`;
     }
 }
 
-// Event Listeners de Navegação
+// ================================
+// NAVEGAÇÃO
+// ================================
 nextBtn.addEventListener("click", goNextPage);
 prevBtn.addEventListener("click", goPrevPage);
 restartBtn.addEventListener("click", goInitialState);
 
-// Permite clicar na própria página para virar (mais intuitivo)
-// Nota: Adicione essa lógica se quiser que o clique na foto vire a página
-// papers.forEach((paper, index) => {
-//     paper.addEventListener('click', () => {
-//         if(currentLocation - 1 === index) goNextPage();
-//     });
-// });
-
 function goNextPage() {
-    if (currentLocation < maxLocation) {
-        if (currentLocation === 1) {
-            openBook();
-        }
+    if (isAnimating || currentLocation >= maxLocation) return;
+    isAnimating = true;
 
-        papers[currentLocation - 1].classList.add("flipped");
-        
-        const pageToFlipIndex = currentLocation - 1;
-        // Delay para ajustar z-index após a animação começar
-        setTimeout(() => {
-            papers[pageToFlipIndex].style.zIndex = pageToFlipIndex + 1;
-        }, 100); // Sincronizado com CSS
+    if (currentLocation === 1) openBook();
 
-        if (currentLocation === numOfPapers) {
-            closeBook(false);
-        }
-        
-        currentLocation++;
-        updateButtons();
-    }
+    const paper = papers[currentLocation - 1];
+    paper.classList.add("flipped");
+
+    setTimeout(() => {
+        paper.style.zIndex = currentLocation;
+    }, 100);
+
+    if (currentLocation === numOfPapers) closeBook(false);
+
+    currentLocation++;
+    updateButtons();
+
+    setTimeout(() => { isAnimating = false; }, 800);
 }
 
 function goPrevPage() {
-    if (currentLocation > 1) {
-        currentLocation--;
-        
-        if (currentLocation === numOfPapers) {
-             openBook(false);
-        }
+    if (isAnimating || currentLocation <= 1) return;
+    isAnimating = true;
 
-        papers[currentLocation - 1].classList.remove("flipped");
-        
-        const pageToUnflipIndex = currentLocation - 1;
-        setTimeout(() => {
-            papers[pageToUnflipIndex].style.zIndex = numOfPapers - pageToUnflipIndex;
-        }, 100);
+    currentLocation--;
 
-        if (currentLocation === 1) {
-            closeBook(true);
-        }
-        
-        updateButtons();
-    }
+    if (currentLocation === numOfPapers) openBook();
+
+    const paper = papers[currentLocation - 1];
+    paper.classList.remove("flipped");
+
+    setTimeout(() => {
+        paper.style.zIndex = numOfPapers - (currentLocation - 1);
+    }, 100);
+
+    if (currentLocation === 1) closeBook(true);
+
+    updateButtons();
+
+    setTimeout(() => { isAnimating = false; }, 800);
 }
 
 function goInitialState() {
+    if (isAnimating) return;
+    isAnimating = true;
+
     let i = numOfPapers;
     const interval = setInterval(() => {
         if (i > 0) {
             papers[i - 1].classList.remove("flipped");
-            papers[i - 1].style.zIndex = numOfPapers - (i - 1); // Fix visual imediato
+            papers[i - 1].style.zIndex = numOfPapers - (i - 1);
             i--;
         } else {
             clearInterval(interval);
             currentLocation = 1;
             closeBook(true);
             updateButtons();
+            setTimeout(() => { isAnimating = false; }, 800);
         }
-    }, 100); // Um pouco mais rápido para ser fluido
+    }, 120);
 }
 
-function openBook() {
-    book.style.transform = "translateX(50%)";
-}
-
-function closeBook(isAtBeginning) {
-    if (isAtBeginning) {
-        book.style.transform = "translateX(0%)";
-    } else {
-        book.style.transform = "translateX(100%)";
-    }
-}
-
-// Lógica de Orientação (Mobile)
+// ================================
+// ORIENTAÇÃO (MOBILE)
+// ================================
 function handleOrientationChange() {
-    const isLandscape = screen.orientation.type.includes('landscape');
-    
-    // Verifica se é mobile pelo tamanho da tela também
-    const isMobile = window.innerWidth < 768; 
+    const isLandscape = window.innerWidth > window.innerHeight;
+    const isMobile = Math.min(window.innerWidth, window.innerHeight) < 600;
 
     if (isMobile && !isLandscape) {
-        orientationPrompt.style.display = 'flex';
-        book.style.display = 'none';
-        prevBtn.style.display = 'none';
-        nextBtn.style.display = 'none';
-        if(restartBtn) restartBtn.style.display = 'none';
+        orientationPrompt.style.display = "flex";
+        book.style.display = "none";
+        prevBtn.style.display = "none";
+        nextBtn.style.display = "none";
+        restartBtn.style.display = "none";
     } else {
-        orientationPrompt.style.display = 'none';
-        book.style.display = 'block';
-        updateButtons();
+        orientationPrompt.style.display = "none";
+        book.style.display = "block";
+
+        // Reposiciona corretamente ao girar
+        requestAnimationFrame(() => {
+            if (currentLocation === 1) {
+                book.style.transform = "translateX(0px)";
+            } else if (currentLocation > numOfPapers) {
+                closeBook(false);
+            } else {
+                openBook();
+            }
+            updateButtons();
+        });
     }
 }
 
-// Efeito de Partículas (Corações Flutuantes)
+// ================================
+// CORAÇÕES FLUTUANTES — SEM LAG
+// ================================
 function createHearts() {
-    const container = document.getElementById('hearts-container');
-    const heartSymbols = ['♥', '❤', '❥']; // Variações de corações
-    const numberOfHearts = 20; // Quantidade de corações simultâneos
+    const container = document.getElementById("hearts-container");
+    const symbols = ["♥", "❤", "❥"];
+    const MAX_HEARTS = 15;
 
-    setInterval(() => {
-        const heart = document.createElement('div');
-        heart.classList.add('heart');
-        heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
-        
-        // Posição aleatória na largura da tela
-        heart.style.left = Math.random() * 100 + 'vw';
-        
-        // Tamanho aleatório
-        const size = Math.random() * 1.5 + 0.5;
-        heart.style.fontSize = size + 'rem';
-        
-        // Duração aleatória da animação
-        heart.style.animationDuration = Math.random() * 3 + 4 + 's'; // Entre 4 e 7 segundos
+    function spawnHeart() {
+        const existing = container.querySelectorAll(".heart").length;
+        if (existing >= MAX_HEARTS) return;
+
+        const heart = document.createElement("div");
+        heart.classList.add("heart");
+        heart.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+
+        const size     = Math.random() * 1.2 + 0.6;
+        const duration = Math.random() * 3 + 5;
+        const leftPos  = Math.random() * 96 + 2;
+
+        heart.style.cssText = `
+            left: ${leftPos}vw;
+            font-size: ${size}rem;
+            animation-duration: ${duration}s;
+        `;
 
         container.appendChild(heart);
+        heart.addEventListener("animationend", () => heart.remove(), { once: true });
+    }
 
-        // Remove o coração do DOM após a animação terminar para não pesar
-        setTimeout(() => {
-            heart.remove();
-        }, 8000);
-    }, 400); // Cria um novo coração a cada 400ms
+    setInterval(spawnHeart, 700);
 }
 
-// Event Listeners Globais
-window.addEventListener('resize', handleOrientationChange);
-screen.orientation.addEventListener('change', handleOrientationChange);
-document.addEventListener('DOMContentLoaded', handleOrientationChange);
+// ================================
+// SWIPE (TOQUE)
+// ================================
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener("touchend", (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        if (dx < 0) goNextPage();
+        else goPrevPage();
+    }
+}, { passive: true });
+
+// ================================
+// EVENT LISTENERS GLOBAIS
+// ================================
+window.addEventListener("resize", handleOrientationChange);
+screen.orientation?.addEventListener("change", handleOrientationChange);
+document.addEventListener("DOMContentLoaded", handleOrientationChange);
