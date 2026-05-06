@@ -334,3 +334,15 @@ body {
     #restart-btn { right: max(2%, env(safe-area-inset-right)); }
     #music-controls { left: max(16px, env(safe-area-inset-left)); }
 }
+
+/* ================================
+   ESTADO FINAL DO LIVRO
+   Quando visibility:hidden é aplicado nos papers via JS,
+   o livro mostra apenas o fundo vazio — garantimos que
+   o book-container tenha o mesmo fundo que o paper-white
+   para não aparecer "vazio".
+   ================================ */
+.book {
+    background-color: var(--paper-white);
+    border-radius: 4px;
+}

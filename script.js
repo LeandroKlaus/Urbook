@@ -1,64 +1,58 @@
-// Referências do DOM
-const prevBtn       = document.querySelector("#prev-btn");
-const nextBtn       = document.querySelector("#next-btn");
-const restartBtn    = document.querySelector("#restart-btn");
-const book          = document.querySelector("#book");
-const papers        = document.querySelectorAll(".paper");
+// ============================================================
+// REFERÊNCIAS
+// ============================================================
+const prevBtn         = document.querySelector("#prev-btn");
+const nextBtn         = document.querySelector("#next-btn");
+const restartBtn      = document.querySelector("#restart-btn");
+const book            = document.querySelector("#book");
+const papers          = document.querySelectorAll(".paper");
 const backgroundMusic = document.querySelector("#background-music");
-const musicBtn      = document.querySelector("#music-btn");
+const musicBtn        = document.querySelector("#music-btn");
 const orientationPrompt = document.querySelector("#orientation-prompt");
 
-// Paginação
-const numOfPapers = papers.length;
-const maxLocation = numOfPapers + 1;
+const numOfPapers = papers.length;   // 9
+const maxLocation = numOfPapers + 1; // 10
 let currentLocation = 1;
 let isAnimating = false;
+let safariHideDone = false;
 
-// Init
+// ============================================================
+// INIT
+// O último paper (quarta-capa) precisa de transform-origin: right
+// para que quando flipado ele "feche" naturalmente para a direita,
+// sem projetar para a esquerda e criar a "marca de livro aberto".
+// ============================================================
+papers[numOfPapers - 1].style.transformOrigin = "right";
+
 resetZIndex();
 updateButtons();
 createHearts();
 
-// ================================
-// SAFARI FULLSCREEN WORKAROUND
-// Safari iOS bloqueia requestFullscreen.
-// Truque: body fica 101vh → provoca scroll → scrollTo(0,1)
-// faz a barra de endereços sumir automaticamente.
-// ================================
-let safariScrollApplied = false;
-
-function safariHideBar() {
-    // Só aplica em Safari iOS (não tem fullscreen API)
+// ============================================================
+// SAFARI — ocultar barra de endereços
+// Deve ser chamado DENTRO de um event listener de clique/touch
+// (gesto do usuário). Funciona no Safari iOS 15+.
+// ============================================================
+function trySafariHideBar() {
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (!isSafari) return;
+    if (!isSafari || safariHideDone) return;
+    safariHideDone = true;
 
-    // Ativa overflow temporário no html para permitir o scroll
-    document.documentElement.style.height = "101vh";
-    document.documentElement.style.overflowY = "scroll";
+    const html = document.documentElement;
+    html.style.height = "101vh";
+    html.style.overflowY = "auto";
+    window.scrollTo(0, 1);
 
-    requestAnimationFrame(() => {
-        window.scrollTo({ top: 1, behavior: "instant" });
-
-        // Depois do scroll, trava de volta
-        setTimeout(() => {
-            document.documentElement.style.height = "100%";
-            document.documentElement.style.overflowY = "hidden";
-        }, 300);
-    });
+    setTimeout(() => {
+        html.style.height = "100%";
+        html.style.overflowY = "hidden";
+    }, 500);
 }
 
-function safariRestoreBar() {
-    // Volta ao topo → browser restaura a barra
-    if (safariScrollApplied) {
-        window.scrollTo({ top: 0, behavior: "instant" });
-        safariScrollApplied = false;
-    }
-}
-
-// ================================
-// FULLSCREEN (Android / Desktop)
-// ================================
-function requestFullscreenLandscape() {
+// ============================================================
+// FULLSCREEN padrão (Android / Chrome / Firefox)
+// ============================================================
+function requestFullscreen() {
     const el = document.documentElement;
     if (el.requestFullscreen) {
         el.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
@@ -67,26 +61,21 @@ function requestFullscreenLandscape() {
     } else if (el.mozRequestFullScreen) {
         el.mozRequestFullScreen();
     }
-
     if (screen.orientation?.lock) {
         screen.orientation.lock("landscape").catch(() => {});
     }
-
-    // Também tenta o truque do Safari
-    safariHideBar();
 }
 
-function exitFullscreenIfActive() {
+function exitFullscreen() {
     const isFs = document.fullscreenElement || document.webkitFullscreenElement;
     if (isFs) {
         (document.exitFullscreen || document.webkitExitFullscreen)?.call(document).catch(() => {});
     }
-    safariRestoreBar();
 }
 
-// ================================
+// ============================================================
 // MÚSICA
-// ================================
+// ============================================================
 musicBtn.addEventListener("click", () => {
     if (backgroundMusic.paused) {
         backgroundMusic.play().catch(() => {});
@@ -99,49 +88,46 @@ musicBtn.addEventListener("click", () => {
     }
 });
 
-// ================================
+// ============================================================
 // BOTÕES
-// ================================
+// ============================================================
 function updateButtons() {
     prevBtn.style.display    = currentLocation === 1 ? "none" : "block";
     restartBtn.style.display = currentLocation > numOfPapers ? "block" : "none";
-    nextBtn.style.display    = currentLocation > numOfPapers ? "none" : "block";
+    nextBtn.style.display    = currentLocation > numOfPapers ? "none"  : "block";
 }
 
 function resetZIndex() {
     papers.forEach((p, i) => { p.style.zIndex = numOfPapers - i; });
 }
 
-// ================================
-// POSICIONAMENTO DO LIVRO
+// ============================================================
+// POSIÇÃO DO LIVRO
 //
-// Lógica das 3 posições:
-//   FECHADO INÍCIO  → translateX(0)          — livro encostado na esquerda do centro
-//   ABERTO (meio)   → translateX(+halfWidth)  — livro deslocado para mostrar a dobra central
-//   FECHADO FIM     → translateX(0)           — livro volta ao centro (todas páginas viradas)
-// ================================
-function getHalf() {
-    return book.offsetWidth / 2;
-}
+// "start" → translateX(0)      capa fechada, centrada
+// "open"  → translateX(+half)  livro aberto, dobra no centro
+// "end"   → translateX(0)      quarta-capa fechada, centrada
+//
+// Com transform-origin:right no último paper, quando ele está
+// .flipped (rotateY(-180deg)) ele gira em torno do eixo DIREITO,
+// então visualmente fecha para a direita — igual à capa do início.
+// Resultado: translateX(0) é correto nos dois estados fechados.
+// ============================================================
+function getHalf() { return book.offsetWidth / 2; }
 
 function positionBook(state) {
-    switch (state) {
-        case "start":  // capa fechada
-            book.style.transform = "translateX(0px)";
-            break;
-        case "open":   // páginas abertas
-            book.style.transform = `translateX(${getHalf()}px)`;
-            break;
-        case "end":    // quarta-capa fechada — volta ao centro também
-            book.style.transform = "translateX(0px)";
-            break;
-    }
+    book.style.transform = state === "open"
+        ? `translateX(${getHalf()}px)`
+        : "translateX(0px)";
 }
 
-// ================================
+// ============================================================
 // NAVEGAÇÃO
-// ================================
-nextBtn.addEventListener("click", goNextPage);
+// ============================================================
+nextBtn.addEventListener("click", () => {
+    if (isMobile()) trySafariHideBar();
+    goNextPage();
+});
 prevBtn.addEventListener("click", goPrevPage);
 restartBtn.addEventListener("click", goInitialState);
 
@@ -149,14 +135,12 @@ function goNextPage() {
     if (isAnimating || currentLocation >= maxLocation) return;
     isAnimating = true;
 
-    // Primeira página: abre o livro
     if (currentLocation === 1) positionBook("open");
 
     const paper = papers[currentLocation - 1];
     paper.classList.add("flipped");
     setTimeout(() => { paper.style.zIndex = currentLocation; }, 100);
 
-    // Última página: fecha o livro no final
     if (currentLocation === numOfPapers) positionBook("end");
 
     currentLocation++;
@@ -170,14 +154,12 @@ function goPrevPage() {
 
     currentLocation--;
 
-    // Voltando da última página: reabre
     if (currentLocation === numOfPapers) positionBook("open");
 
     const paper = papers[currentLocation - 1];
     paper.classList.remove("flipped");
     setTimeout(() => { paper.style.zIndex = numOfPapers - (currentLocation - 1); }, 100);
 
-    // Voltando para a capa: fecha no início
     if (currentLocation === 1) positionBook("start");
 
     updateButtons();
@@ -204,18 +186,18 @@ function goInitialState() {
     }, 120);
 }
 
-// ================================
+// ============================================================
 // ORIENTAÇÃO + FULLSCREEN
-// ================================
+// ============================================================
 function isMobile() {
     return Math.min(window.innerWidth, window.innerHeight) < 600;
 }
 
 function applyBookPosition() {
     requestAnimationFrame(() => {
-        if (currentLocation === 1)              positionBook("start");
-        else if (currentLocation > numOfPapers) positionBook("end");
-        else                                     positionBook("open");
+        if (currentLocation === 1)               positionBook("start");
+        else if (currentLocation > numOfPapers)  positionBook("end");
+        else                                      positionBook("open");
         updateButtons();
     });
 }
@@ -227,14 +209,16 @@ function handleOrientationChange() {
         if (isLandscape) {
             orientationPrompt.style.display = "none";
             book.style.display = "block";
-            requestFullscreenLandscape();
+            requestFullscreen(); // Android/Chrome
+            safariHideDone = false; // reseta para tentar no próximo clique
             applyBookPosition();
         } else {
-            exitFullscreenIfActive();
+            exitFullscreen();
+            safariHideDone = false;
             orientationPrompt.style.display = "flex";
-            book.style.display = "none";
-            prevBtn.style.display = "none";
-            nextBtn.style.display = "none";
+            book.style.display      = "none";
+            prevBtn.style.display    = "none";
+            nextBtn.style.display    = "none";
             restartBtn.style.display = "none";
         }
     } else {
@@ -244,14 +228,9 @@ function handleOrientationChange() {
     }
 }
 
-// Toque na tela de "gire" = gesto do usuário → permite fullscreen ao girar
-orientationPrompt.addEventListener("click", () => {
-    orientationPrompt.dataset.userConsented = "true";
-});
-
-// ================================
-// CORAÇÕES FLUTUANTES
-// ================================
+// ============================================================
+// CORAÇÕES
+// ============================================================
 function createHearts() {
     const container = document.getElementById("hearts-container");
     const symbols = ["♥", "❤", "❥"];
@@ -263,20 +242,19 @@ function createHearts() {
         h.classList.add("heart");
         h.innerText = symbols[Math.floor(Math.random() * symbols.length)];
         h.style.cssText = `
-            left: ${Math.random() * 96 + 2}vw;
-            font-size: ${Math.random() * 1.2 + 0.6}rem;
-            animation-duration: ${Math.random() * 3 + 5}s;
+            left:${Math.random() * 96 + 2}vw;
+            font-size:${Math.random() * 1.2 + 0.6}rem;
+            animation-duration:${Math.random() * 3 + 5}s;
         `;
         container.appendChild(h);
         h.addEventListener("animationend", () => h.remove(), { once: true });
     }
-
     setInterval(spawn, 700);
 }
 
-// ================================
+// ============================================================
 // SWIPE
-// ================================
+// ============================================================
 let touchStartX = 0;
 let touchStartY = 0;
 
@@ -289,13 +267,14 @@ document.addEventListener("touchend", e => {
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        dx < 0 ? goNextPage() : goPrevPage();
+        if (dx < 0) { if (isMobile()) trySafariHideBar(); goNextPage(); }
+        else          goPrevPage();
     }
 }, { passive: true });
 
-// ================================
+// ============================================================
 // LISTENERS GLOBAIS
-// ================================
+// ============================================================
 window.addEventListener("resize", handleOrientationChange);
 screen.orientation?.addEventListener("change", handleOrientationChange);
 document.addEventListener("DOMContentLoaded", handleOrientationChange);
