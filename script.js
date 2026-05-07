@@ -18,20 +18,13 @@ let safariHideDone = false;
 
 // ============================================================
 // INIT
-// O último paper (quarta-capa) precisa de transform-origin: right
-// para que quando flipado ele "feche" naturalmente para a direita,
-// sem projetar para a esquerda e criar a "marca de livro aberto".
 // ============================================================
-papers[numOfPapers - 1].style.transformOrigin = "right";
-
 resetZIndex();
 updateButtons();
 createHearts();
 
 // ============================================================
-// SAFARI — ocultar barra de endereços
-// Deve ser chamado DENTRO de um event listener de clique/touch
-// (gesto do usuário). Funciona no Safari iOS 15+.
+// SAFARI — ocultar barra de endereços no clique do usuário
 // ============================================================
 function trySafariHideBar() {
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
@@ -89,7 +82,7 @@ musicBtn.addEventListener("click", () => {
 });
 
 // ============================================================
-// BOTÕES
+// BOTÕES E Z-INDEX
 // ============================================================
 function updateButtons() {
     prevBtn.style.display    = currentLocation === 1 ? "none" : "block";
@@ -103,22 +96,17 @@ function resetZIndex() {
 
 // ============================================================
 // POSIÇÃO DO LIVRO
-//
-// "start" → translateX(0)      capa fechada, centrada
-// "open"  → translateX(+half)  livro aberto, dobra no centro
-// "end"   → translateX(0)      quarta-capa fechada, centrada
-//
-// Com transform-origin:right no último paper, quando ele está
-// .flipped (rotateY(-180deg)) ele gira em torno do eixo DIREITO,
-// então visualmente fecha para a direita — igual à capa do início.
-// Resultado: translateX(0) é correto nos dois estados fechados.
 // ============================================================
 function getHalf() { return book.offsetWidth / 2; }
 
 function positionBook(state) {
-    book.style.transform = state === "open"
-        ? `translateX(${getHalf()}px)`
-        : "translateX(0px)";
+    if (state === "start") {
+        book.style.transform = "translateX(0px)";
+    } else if (state === "open") {
+        book.style.transform = `translateX(${getHalf()}px)`;
+    } else if (state === "end") {
+        book.style.transform = `translateX(${book.offsetWidth}px)`;
+    }
 }
 
 // ============================================================
@@ -135,13 +123,22 @@ function goNextPage() {
     if (isAnimating || currentLocation >= maxLocation) return;
     isAnimating = true;
 
+    // Quando abre a capa
     if (currentLocation === 1) positionBook("open");
+
+    // Quando vira a ÚLTIMA página (quarta-capa)
+    if (currentLocation === numOfPapers) {
+        positionBook("end");
+        // Remove o fundo assim que o movimento começa
+        book.style.backgroundColor = "transparent";
+        book.style.boxShadow = "none";
+        book.style.border = "none";
+    }
 
     const paper = papers[currentLocation - 1];
     paper.classList.add("flipped");
+    
     setTimeout(() => { paper.style.zIndex = currentLocation; }, 100);
-
-    if (currentLocation === numOfPapers) positionBook("end");
 
     currentLocation++;
     updateButtons();
@@ -152,34 +149,58 @@ function goPrevPage() {
     if (isAnimating || currentLocation <= 1) return;
     isAnimating = true;
 
+    // Se estiver voltando da última página
+    if (currentLocation === maxLocation) {
+        positionBook("open");
+        // Atraso de 750ms: o branco SÓ VOLTA quando a página terminar de cair
+        setTimeout(() => {
+            book.style.backgroundColor = "";
+            book.style.boxShadow = "";
+            book.style.border = "";
+        }, 750);
+    }
+
     currentLocation--;
 
-    if (currentLocation === numOfPapers) positionBook("open");
+    // Se voltamos até a primeira página
+    if (currentLocation === 1) {
+        positionBook("start");
+    }
 
     const paper = papers[currentLocation - 1];
     paper.classList.remove("flipped");
+    
     setTimeout(() => { paper.style.zIndex = numOfPapers - (currentLocation - 1); }, 100);
-
-    if (currentLocation === 1) positionBook("start");
 
     updateButtons();
     setTimeout(() => { isAnimating = false; }, 800);
 }
 
 function goInitialState() {
-    if (isAnimating) return;
+    if (isAnimating || currentLocation === 1) return;
     isAnimating = true;
 
-    let i = numOfPapers;
+    // Se estiver voltando direto do final, esconde até a folha cair
+    if (currentLocation === maxLocation) {
+        positionBook("open");
+        setTimeout(() => {
+            book.style.backgroundColor = "";
+            book.style.boxShadow = "";
+            book.style.border = "";
+        }, 750);
+    }
+
+    let i = currentLocation - 1;
     const interval = setInterval(() => {
         if (i > 0) {
             papers[i - 1].classList.remove("flipped");
             papers[i - 1].style.zIndex = numOfPapers - (i - 1);
+            
+            if (i === 1) positionBook("start");
             i--;
         } else {
             clearInterval(interval);
             currentLocation = 1;
-            positionBook("start");
             updateButtons();
             setTimeout(() => { isAnimating = false; }, 800);
         }
@@ -209,8 +230,8 @@ function handleOrientationChange() {
         if (isLandscape) {
             orientationPrompt.style.display = "none";
             book.style.display = "block";
-            requestFullscreen(); // Android/Chrome
-            safariHideDone = false; // reseta para tentar no próximo clique
+            requestFullscreen();
+            safariHideDone = false;
             applyBookPosition();
         } else {
             exitFullscreen();
@@ -229,7 +250,7 @@ function handleOrientationChange() {
 }
 
 // ============================================================
-// CORAÇÕES
+// CORAÇÕES E LISTENERS
 // ============================================================
 function createHearts() {
     const container = document.getElementById("hearts-container");
@@ -252,9 +273,6 @@ function createHearts() {
     setInterval(spawn, 700);
 }
 
-// ============================================================
-// SWIPE
-// ============================================================
 let touchStartX = 0;
 let touchStartY = 0;
 
@@ -268,13 +286,10 @@ document.addEventListener("touchend", e => {
     const dy = e.changedTouches[0].clientY - touchStartY;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
         if (dx < 0) { if (isMobile()) trySafariHideBar(); goNextPage(); }
-        else          goPrevPage();
+        else goPrevPage();
     }
 }, { passive: true });
 
-// ============================================================
-// LISTENERS GLOBAIS
-// ============================================================
 window.addEventListener("resize", handleOrientationChange);
 screen.orientation?.addEventListener("change", handleOrientationChange);
 document.addEventListener("DOMContentLoaded", handleOrientationChange);

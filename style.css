@@ -148,6 +148,8 @@ body {
     box-shadow: 0 30px 60px rgba(0,0,0,0.6);
     z-index: 10;
     flex-shrink: 0;
+    background-color: var(--paper-white);
+    border-radius: 4px;
 }
 
 .paper {
@@ -336,13 +338,16 @@ body {
 }
 
 /* ================================
-   ESTADO FINAL DO LIVRO
-   Quando visibility:hidden é aplicado nos papers via JS,
-   o livro mostra apenas o fundo vazio — garantimos que
-   o book-container tenha o mesmo fundo que o paper-white
-   para não aparecer "vazio".
+   Z-INDEX INICIAL (PREVINE FLASH FOUC)
+   Garante que no instante que a página carrega, 
+   antes do JS rodar, a capa (p1) já esteja por cima.
    ================================ */
-.book {
-    background-color: var(--paper-white);
-    border-radius: 4px;
-}
+#p1 { z-index: 9; }
+#p2 { z-index: 8; }
+#p3 { z-index: 7; }
+#p4 { z-index: 6; }
+#p5 { z-index: 5; }
+#p6 { z-index: 4; }
+#p7 { z-index: 3; }
+#p8 { z-index: 2; }
+#p9 { z-index: 1; }
